@@ -1,4 +1,4 @@
-name: PyTorch (.pth) to CoreML
+name: YOLO Paddle Detection (.pt → .mlmodel)
 
 on:
   push:
@@ -23,13 +23,14 @@ jobs:
         pip install \
           torch==2.1.0 \
           coremltools==7.1 \
+          ultralytics==8.0.0 \
           numpy==1.26.4
 
-    - name: Convert PyTorch → CoreML (.mlmodel)
-      run: python convert.py
+    - name: Convert Paddle Detection to CoreML
+      run: python convert_paddle.py
 
     - name: Upload CoreML model
       uses: actions/upload-artifact@v4
       with:
-        name: tracknet-coreml
-        path: tracknet_ball_03.mlmodel
+        name: paddle-coreml
+        path: paddle_detection.mlmodel
