@@ -1,11 +1,17 @@
-import coremltools as ct
+import onnx
+from onnx_coreml import convert
 
-print("coremltools version:", ct.__version__)
+ONNX_PATH = "tracknet_ball_03.onnx"
+OUT_PATH = "tracknet_ball_03.mlmodel"
 
-mlmodel = ct.converters.onnx.convert(
-    model="tracknet_ball_03.onnx",
-    minimum_deployment_target=ct.target.iOS15
+print("Loading ONNX model...")
+onnx_model = onnx.load(ONNX_PATH)
+
+print("Converting to CoreML...")
+mlmodel = convert(
+    onnx_model,
+    minimum_ios_deployment_target="15"
 )
 
-mlmodel.save("tracknet_ball_03.mlmodel")
-print("✅ Conversion successful")
+mlmodel.save(OUT_PATH)
+print(f"✅ Conversion successful: {OUT_PATH}")
