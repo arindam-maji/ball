@@ -6,7 +6,7 @@ import coremltools as ct
 # CONFIG
 # =========================================================
 PTH_PATH = "tracknet_best_07.pth"
-MLMODEL_PATH = "tracknet_ball_03.mlmodel"  # .mlmodel format
+MLMODEL_PATH = "tracknet_ball_03.mlmodel"  # <-- .mlmodel output
 IMG_W, IMG_H = 640, 360
 DEVICE = "cpu"
 
@@ -64,14 +64,14 @@ example_input = torch.randn(1, 9, IMG_H, IMG_W)
 traced = torch.jit.trace(model, example_input)
 
 # =========================================================
-# CONVERT TO COREML (.mlmodel)
+# CONVERT TO COREML (.mlmodel, iOS14)
 # =========================================================
-print("Converting to CoreML (.mlmodel)...")
+print("Converting to CoreML (.mlmodel) for iOS14...")
 mlmodel = ct.convert(
     traced,
     inputs=[ct.TensorType(name="input", shape=example_input.shape)],
-    minimum_deployment_target=ct.target.iOS15,
-    convert_to='neuralnetwork'  # <- force .mlmodel output
+    minimum_deployment_target=ct.target.iOS14,  # <-- iOS14 allows .mlmodel
+    convert_to='neuralnetwork'                  # <-- force .mlmodel
 )
 
 mlmodel.save(MLMODEL_PATH)
