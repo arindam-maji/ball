@@ -27,7 +27,7 @@ jobs:
           numpy==1.26.4
 
     - name: Convert Paddle Detection to CoreML
-      run: python convert_paddle.py
+      run: python convert.py
 
     - name: Upload CoreML model
       uses: actions/upload-artifact@v4
