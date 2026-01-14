@@ -1,35 +1,37 @@
+# convert_to_coreml.py
 import torch
-from ultralytics import YOLO
 import coremltools as ct
+from ultralytics import YOLO
 import os
 
-# ================= CONFIG =================
-PT_PATH = r"best.pt"
-TS_PATH = "best.torchscript.pt"  # intermediate TorchScript
-MLMODEL_PATH = "paddle_fast_motion.mlmodel"
+# ---------------- CONFIG ----------------
+MODEL_PATH ="Court_Detection.pt"   # from GitHub Actions secret or default
+OUTPUT_PATH ="court.mlmodel"
+IMG_SIZE = 640  # input size
 
-DEVICE = "cpu"
-IMG_H, IMG_W = 960, 960  # match training image size
-
-# ================= LOAD YOLO MODEL =================
+# ---------------- LOAD MODEL ----------------
 print("Loading YOLO model...")
-model = YOLO(PT_PATH)
+model = YOLO(MODEL_PATH)
 
-# ================= TORCHSCRIPT EXPORT =================
-print("Exporting to TorchScript...")
-ts_model = model.model
-example_input = torch.randn(1, 3, IMG_H, IMG_W)
-traced = torch.jit.trace(ts_model, example_input)
-traced.save(TS_PATH)
-print(f"✅ TorchScript saved: {TS_PATH}")
+# ---------------- TRACE MODEL ----------------
+# Create a dummy input for tracing
+dummy_input = torch.randn(1, 3, IMG_SIZE, IMG_SIZE)
 
-# ================= COREML CONVERSION =================
-print("Converting to CoreML (.mlmodel)...")
+print("Tracing the model for CoreML conversion...")
+traced_model = model.model.model  # get the raw PyTorch nn.Module
+traced_model.eval()
+example_output = traced_model(dummy_input)
+
+# ---------------- CONVERT TO COREML ----------------
+print("Converting to CoreML...")
 mlmodel = ct.convert(
-    traced,
-    inputs=[ct.TensorType(shape=example_input.shape)],
+    traced_model,
+    inputs=[ct.TensorType(name="input_1", shape=dummy_input.shape)],
+    convert_to="mlprogram", 
     minimum_deployment_target=ct.target.iOS15
+# recommended for YOLOv8
 )
 
-mlmodel.save(MLMODEL_PATH)
-print(f"✅ CoreML model saved: {MLMODEL_PATH}")
+# ---------------- SAVE ----------------
+mlmodel.save(OUTPUT_PATH)
+print(f"✅ Saved CoreML model at {OUTPUT_PATH}")
