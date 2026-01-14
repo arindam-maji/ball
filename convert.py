@@ -2,9 +2,8 @@ import coremltools as ct
 
 print("coremltools version:", ct.__version__)
 
-mlmodel = ct.converters.convert(
+mlmodel = ct.converters.onnx.convert(
     model="tracknet_ball_03.onnx",
-    source="onnx",
     minimum_deployment_target=ct.target.iOS15
 )
 
