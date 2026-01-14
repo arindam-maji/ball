@@ -4,7 +4,8 @@ on: [push]
 
 jobs:
   convert:
-    runs-on: macos-latest
+    runs-on: macos-13   # IMPORTANT: must be macOS
+
     steps:
     - uses: actions/checkout@v4
 
@@ -13,10 +14,20 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install deps
+    - name: Install dependencies (locked & stable)
       run: |
-        pip uninstall -y coremltools
-        pip install coremltools==7.1 onnx==1.15.0 numpy==1.26.4
+        pip uninstall -y coremltools onnx onnx-coreml numpy || true
+        pip install coremltools==6.3 onnx==1.13.1 onnx-coreml==1.3 numpy==1.23.5
+
+    - name: Verify environment
+      run: |
+        python - <<EOF
+        import coremltools, onnx
+        from onnx_coreml import convert
+        print("coremltools:", coremltools.__version__)
+        print("onnx:", onnx.__version__)
+        print("onnx-coreml OK")
+        EOF
 
     - name: Convert ONNX → CoreML
       run: |
