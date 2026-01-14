@@ -15,7 +15,8 @@ jobs:
 
     - name: Install deps
       run: |
-        pip install coremltools onnx
+        pip uninstall -y coremltools
+        pip install coremltools==7.1 onnx==1.15.0 numpy==1.26.4
 
     - name: Convert ONNX → CoreML
       run: |
