@@ -1,38 +1,77 @@
 import torch
+import torch.nn as nn
 import coremltools as ct
 
-# ---------------- CONFIG ----------------
+# =========================================================
+# CONFIG
+# =========================================================
 PTH_PATH = "tracknet_best_07.pth"
 MLMODEL_PATH = "tracknet_ball_03.mlmodel"
-INPUT_SHAPE = (1, 3, 288, 512)   # <-- adjust if your model differs
-IOS_TARGET = ct.target.iOS15
-# ----------------------------------------
 
-print("Loading model...")
+IMG_W, IMG_H = 640, 360
+DEVICE = "cpu"
 
-# 🔹 IMPORT YOUR MODEL CLASS
-from model import TrackNet   # <-- must match your training code
+# =========================================================
+# MODEL DEFINITION (FROM TRAINING CODE)
+# =========================================================
+class ConvBlock(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, 3, padding=1),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True)
+        )
 
-model = TrackNet()
-state_dict = torch.load(PTH_PATH, map_location="cpu")
-model.load_state_dict(state_dict)
+    def forward(self, x):
+        return self.block(x)
+
+
+class TrackNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            ConvBlock(9, 64), ConvBlock(64, 64), nn.MaxPool2d(2),
+            ConvBlock(64, 128), ConvBlock(128, 128), nn.MaxPool2d(2),
+            ConvBlock(128, 256), ConvBlock(256, 256), nn.MaxPool2d(2)
+        )
+
+        self.decoder = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False),
+            ConvBlock(256, 128),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False),
+            ConvBlock(128, 64),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False),
+            nn.Conv2d(64, 1, 1)
+        )
+
+    def forward(self, x):
+        return self.decoder(self.encoder(x))
+
+
+# =========================================================
+# LOAD MODEL
+# =========================================================
+print("Loading PyTorch model...")
+model = TrackNet().to(DEVICE)
+model.load_state_dict(torch.load(PTH_PATH, map_location=DEVICE))
 model.eval()
 
-example_input = torch.randn(*INPUT_SHAPE)
+# =========================================================
+# TRACE
+# =========================================================
+print("Tracing model...")
+example_input = torch.randn(1, 9, IMG_H, IMG_W)
+traced = torch.jit.trace(model, example_input)
 
-print("Tracing TorchScript...")
-traced_model = torch.jit.trace(model, example_input)
-
+# =========================================================
+# CONVERT TO COREML (SUPPORTED PATH)
+# =========================================================
 print("Converting to CoreML...")
 mlmodel = ct.convert(
-    traced_model,
-    source="pytorch",
-    inputs=[ct.ImageType(
-        name="input",
-        shape=INPUT_SHAPE,
-        scale=1/255.0
-    )],
-    minimum_deployment_target=IOS_TARGET
+    traced,
+    inputs=[ct.TensorType(name="input", shape=example_input.shape)],
+    minimum_deployment_target=ct.target.iOS15
 )
 
 mlmodel.save(MLMODEL_PATH)
