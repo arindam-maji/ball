@@ -1,15 +1,16 @@
-name: YOLO PT → CoreML
+name: Convert PyTorch to CoreML
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   convert:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -20,17 +21,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install \
-            torch==2.1.0 \
-            coremltools==7.1 \
-            numpy==1.26.4 \
-            ultralytics==8.0.115  # pin exact version
+          pip install torch torchvision ultralytics coremltools
 
-      - name: Convert PyTorch → CoreML
-        run: python convert.py
+      - name: Run conversion script
+        run: |
+          python convert_to_coreml.py
 
       - name: Upload CoreML model
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: paddle-coreml
-          path: paddle_fast_motion.mlmodel
+          name: court-mlmodel
+          path: court.mlmodel
