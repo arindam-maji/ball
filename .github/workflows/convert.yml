@@ -17,7 +17,7 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install dependencies (PINNED & COMPATIBLE)
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install \
@@ -25,9 +25,8 @@ jobs:
           coremltools==7.1 \
           numpy==1.26.4
 
-    - name: Convert PyTorch → CoreML
-      run: |
-        python convert.py
+    - name: Convert PyTorch → CoreML (.mlmodel)
+      run: python convert.py
 
     - name: Upload CoreML model
       uses: actions/upload-artifact@v4
