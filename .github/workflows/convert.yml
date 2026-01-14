@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   convert:
-    runs-on: macos-13   # IMPORTANT: must be macOS
+    runs-on: macos-latest   # IMPORTANT: must be macOS
 
     steps:
     - uses: actions/checkout@v4
