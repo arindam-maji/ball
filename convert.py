@@ -6,13 +6,12 @@ import coremltools as ct
 # CONFIG
 # =========================================================
 PTH_PATH = "tracknet_best_07.pth"
-MLMODEL_PATH = "tracknet_ball_03.mlmodel"
-
+MLMODEL_PATH = "tracknet_ball_03.mlmodel"  # .mlmodel format
 IMG_W, IMG_H = 640, 360
 DEVICE = "cpu"
 
 # =========================================================
-# MODEL DEFINITION (FROM TRAINING CODE)
+# MODEL DEFINITION
 # =========================================================
 class ConvBlock(nn.Module):
     def __init__(self, in_ch, out_ch):
@@ -65,13 +64,14 @@ example_input = torch.randn(1, 9, IMG_H, IMG_W)
 traced = torch.jit.trace(model, example_input)
 
 # =========================================================
-# CONVERT TO COREML (SUPPORTED PATH)
+# CONVERT TO COREML (.mlmodel)
 # =========================================================
-print("Converting to CoreML...")
+print("Converting to CoreML (.mlmodel)...")
 mlmodel = ct.convert(
     traced,
     inputs=[ct.TensorType(name="input", shape=example_input.shape)],
-    minimum_deployment_target=ct.target.iOS15
+    minimum_deployment_target=ct.target.iOS15,
+    convert_to='neuralnetwork'  # <- force .mlmodel output
 )
 
 mlmodel.save(MLMODEL_PATH)
